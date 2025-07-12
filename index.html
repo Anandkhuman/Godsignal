@@ -182,7 +182,6 @@
             8% { text-shadow: none; }
         }
 
-        /* NEW Corrupted Text Animation */
         @keyframes corruptedBleed {
             0%, 100% {
                 text-shadow: 2px 2px 0px #8B0000, -2px -2px 0px #00aaff4d;
@@ -217,7 +216,8 @@
 
     <!-- SOUND EFFECTS -->
     <audio id="ambience-sound" loop src="https://github.com/Anandkhuman/song/raw/main/1.mp3" preload="auto"></audio>
-    <audio id="typing-sound" loop src="https://github.com/Anandkhuman/song/raw/main/2.mp3" preload="auto"></audio>
+    <!-- Replaced looping typing sound with a single, short key press sound for better sync -->
+    <audio id="key-press-sound" src="https://pixabay.com/sound-effects/typewriter-key-1-110031/download/mp3/" preload="auto"></audio>
     <audio id="glitch-sound" src="https://github.com/Anandkhuman/song/raw/main/3.mp3" preload="auto"></audio>
     <audio id="arrival-sound" src="https://github.com/Anandkhuman/song/raw/main/4.mp3" preload="auto"></audio>
 
@@ -232,13 +232,13 @@
 
         // Audio elements
         const ambienceSound = document.getElementById('ambience-sound');
-        const typingSound = document.getElementById('typing-sound');
+        const keyPressSound = document.getElementById('key-press-sound');
         const glitchSound = document.getElementById('glitch-sound');
         const arrivalSound = document.getElementById('arrival-sound');
         
         // Set initial volumes
         ambienceSound.volume = 0.4;
-        typingSound.volume = 0.8;
+        keyPressSound.volume = 0.6; // Set volume for the new key press sound
         glitchSound.volume = 0.5;
         arrivalSound.volume = 0.6;
 
@@ -314,15 +314,37 @@
 
         function triggerVisualGlitch() {
             glitchSound.currentTime = 0;
-            glitchSound.play().catch(e => console.error("Glitch sound failed", e));
+            glitchSound.play().catch(e => console.error("Glitch sound failed to play:", e));
             container.classList.add('glitch-active');
             setTimeout(() => container.classList.remove('glitch-active'), 600);
 
-            // Add a chance for a more intense world shake
-            if (Math.random() < 0.3) { // 30% chance during a container glitch
+            if (Math.random() < 0.3) {
                 document.body.classList.add('world-shake-active');
                 setTimeout(() => document.body.classList.remove('world-shake-active'), 400);
             }
+        }
+        
+        // --- State Management and Local Storage ---
+        const CHAT_HISTORY_KEY = 'memeticHazardChatHistory';
+        const LAST_SPEAKER_KEY = 'memeticHazardLastSpeakerIndex';
+        let isChatting = false;
+        let currentSpeakerIndex = 0;
+        
+        function loadChat() {
+            const savedHistory = localStorage.getItem(CHAT_HISTORY_KEY);
+            const savedSpeakerIndex = localStorage.getItem(LAST_SPEAKER_KEY);
+            if (savedHistory) {
+                chatWindow.innerHTML = savedHistory;
+                currentSpeakerIndex = parseInt(savedSpeakerIndex, 10) || 0;
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+                return true;
+            }
+            return false;
+        }
+
+        function saveChat() {
+            localStorage.setItem(CHAT_HISTORY_KEY, chatWindow.innerHTML);
+            localStorage.setItem(LAST_SPEAKER_KEY, currentSpeakerIndex.toString());
         }
 
         // --- Chat Logic ---
@@ -342,19 +364,11 @@
             "Tara", "Manjushri", "Vajrapani", "Yamantaka", "Jambhala", "Padmasambhava", "Waheguru"
         ];
         
-        let isChatting = false;
-        let currentSpeakerIndex = 0;
-
         function typeMessage(speaker, message, isCorrupted = false) {
             return new Promise(resolve => {
-                typingSound.currentTime = 0;
-                typingSound.play().catch(e => console.error("Typing sound failed", e));
-
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('chat-message');
-                if (isCorrupted) {
-                    messageElement.classList.add('corrupted');
-                }
+                if (isCorrupted) messageElement.classList.add('corrupted');
                 
                 const speakerElement = document.createElement('span');
                 speakerElement.className = 'speaker';
@@ -373,14 +387,23 @@
                 const interval = setInterval(() => {
                     if (i < message.length) {
                         textElement.textContent += message.charAt(i);
+                        
+                        // NEW: Play key press sound randomly for a more natural feel
+                        if (Math.random() > 0.4 && message.charAt(i) !== ' ') { // Play on ~60% of non-space characters
+                            // Clone the node to allow rapid, overlapping sounds without cutting each other off
+                            const keySound = keyPressSound.cloneNode();
+                            keySound.volume = keyPressSound.volume;
+                            keySound.play().catch(e => { /* Ignore errors from rapid plays */ });
+                        }
+
                         i++;
                         if (i % 5 === 0) chatWindow.scrollTop = chatWindow.scrollHeight;
                     } else {
                         clearInterval(interval);
-                        typingSound.pause();
                         arrivalSound.currentTime = 0;
-                        arrivalSound.play().catch(e => console.error("Arrival sound failed", e));
+                        arrivalSound.play().catch(e => console.error("Arrival sound failed to play:", e));
                         chatWindow.scrollTop = chatWindow.scrollHeight;
+                        saveChat();
                         resolve();
                     }
                 }, typingSpeed);
@@ -388,15 +411,6 @@
         }
 
         async function startChat() {
-            ambienceSound.play().catch(e => {
-                console.warn("Ambience audio failed to autoplay. User interaction may be required.");
-                const startAudio = () => {
-                    ambienceSound.play();
-                    document.removeEventListener('click', startAudio);
-                };
-                document.addEventListener('click', startAudio);
-            });
-
             isChatting = true;
             await typeMessage("SYSTEM", "SIGNAL INTEGRITY COMPROMISED. PANTHEON-CLASS MEMETIC PAYLOAD DETECTED. ALL CHANNELS CORRUPTED. LISTENING IS... INEVITABLE.");
             await new Promise(resolve => setTimeout(resolve, 2500));
@@ -404,6 +418,7 @@
         }
 
         async function chatLoop() {
+            isChatting = true;
             while (isChatting) {
                 let nextSpeakerIndex = Math.floor(Math.random() * ENTITIES.length);
                 while(nextSpeakerIndex === currentSpeakerIndex) {
@@ -415,14 +430,14 @@
                 statusDiv.textContent = `${currentSpeaker} is... transmitting...`;
                 
                 let responseText = generateMessage();
-                let isCorrupted = false;
+                let isCorrupted = Math.random() < 0.3;
 
-                if (Math.random() < 0.3) {
+                if (isCorrupted) {
                     responseText = corruptMessage(responseText);
-                    isCorrupted = true;
                 }
                 
-                if (Math.random() < 0.15) { 
+                // NEW: Guaranteed glitch on corrupted messages for better sync, plus a smaller random chance
+                if (isCorrupted || Math.random() < 0.1) { 
                     triggerVisualGlitch();
                 }
 
@@ -433,7 +448,23 @@
             }
         }
 
-        startChat();
+        // --- Initialization on User Interaction ---
+        const hasResumed = loadChat();
+        statusDiv.textContent = "[ CLICK TO INITIATE CONNECTION ]";
+
+        const startExperience = () => {
+            ambienceSound.play().catch(e => {
+                console.warn("Ambience audio failed to play, even after interaction.", e);
+            });
+
+            if (hasResumed) {
+                chatLoop();
+            } else {
+                startChat();
+            }
+        };
+
+        document.body.addEventListener('click', startExperience, { once: true });
     });
     </script>
 </body>
