@@ -17,17 +17,9 @@
             --success-color: #2ecc71;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -36,21 +28,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
+            -webkit-tap-highlight-color: transparent;
         }
 
-        #three-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
+        #three-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
 
-        .app-wrapper {
+        .container {
             position: relative;
             z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             width: clamp(300px, 90vw, 540px);
             padding: 2rem;
             background-color: rgba(27, 38, 59, 0.85);
@@ -59,19 +47,6 @@
             border: 1px solid var(--accent-color);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             text-align: center;
-        }
-        
-        #permission-overlay {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        
-        #main-container {
-            display: none; /* Hidden by default, shown after permission */
-            flex-direction: column;
-            align-items: center;
         }
 
         h1 {
@@ -82,16 +57,22 @@
             text-shadow: 0 0 10px var(--highlight-color);
         }
         
-        p.description {
+        #infoText {
             font-size: clamp(0.9rem, 3vw, 1rem);
             color: var(--highlight-color);
+            min-height: 2.5em;
             margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.4;
         }
+        #infoText.error { color: var(--alert-color); font-weight: 500; }
 
         .video-container {
             position: relative;
             width: 100%;
-            padding-top: 75%; /* 4:3 Aspect Ratio */
+            padding-top: 75%;
             margin-top: 1rem;
             border-radius: 10px;
             overflow: hidden;
@@ -101,16 +82,11 @@
 
         #video, #overlayCanvas {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: scaleX(-1); /* Mirror effect */
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            transform: scaleX(-1);
         }
-        
-        #overlayCanvas {
-            z-index: 11;
-        }
+        #overlayCanvas { z-index: 11; }
 
         .controls {
             margin-top: 1.5rem;
@@ -121,7 +97,7 @@
             width: 100%;
         }
 
-        .button {
+        #mainButton {
             padding: 14px 28px;
             font-size: 1.1rem;
             font-weight: bold;
@@ -136,12 +112,12 @@
             -webkit-appearance: none;
         }
 
-        .button:hover:not(:disabled) {
+        #mainButton:hover:not(:disabled) {
             background-color: var(--accent-color);
             transform: translateY(-2px);
         }
 
-        .button:disabled {
+        #mainButton:disabled {
             background-color: var(--secondary-color);
             cursor: not-allowed;
             transform: none;
@@ -149,48 +125,25 @@
         }
 
         .status-container {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
+            display: flex; justify-content: space-around; width: 100%;
             background-color: var(--secondary-color);
-            padding: 0.75rem;
-            border-radius: 8px;
+            padding: 0.75rem; border-radius: 8px;
         }
         
-        .status-box {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .status-box p {
-            font-size: 1rem;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .status-box .label {
-            font-size: 0.8rem;
-            color: var(--highlight-color);
-            text-transform: uppercase;
-        }
+        .status-box { display: flex; flex-direction: column; }
+        .status-box p { font-size: 1rem; margin: 0; font-weight: 500; }
+        .status-box .label { font-size: 0.8rem; color: var(--highlight-color); text-transform: uppercase; }
 
         #status.awake { color: var(--success-color); }
         #status.drowsy { color: var(--alert-color); font-weight: bold; }
 
         #alert-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
             background-color: rgba(230, 57, 70, 0.7);
-            display: none; /* Initially hidden */
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            opacity: 0;
+            display: none; justify-content: center; align-items: center;
+            z-index: 100; opacity: 0;
         }
-
         #alert-message {
             color: white;
             font-size: clamp(2rem, 10vw, 4rem);
@@ -201,166 +154,114 @@
     </style>
 </head>
 <body>
-
-    <!-- Three.js Background Canvas -->
     <div id="three-bg"></div>
-
-    <!-- Main Application Container -->
-    <div class="app-wrapper">
+    <div class="container">
+        <h1>AI Drowsiness Detection</h1>
+        <p id="infoText">Initializing...</p>
         
-        <!-- Step 1: Permission Screen -->
-        <div id="permission-overlay">
-            <h1>Stay Alert</h1>
-            <p class="description">This app uses your camera to detect drowsiness in real-time. Your privacy is protected as no video data leaves your device.</p>
-            <button id="permissionButton" class="button">Grant Camera Access</button>
+        <div class="video-container">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="overlayCanvas"></canvas>
         </div>
 
-        <!-- Step 2: Main App (Initially Hidden) -->
-        <div id="main-container">
-            <h1>AI Drowsiness Detection</h1>
-            <div class="video-container">
-                <video id="video" autoplay playsinline muted></video>
-                <canvas id="overlayCanvas"></canvas>
-            </div>
-            <div class="controls">
-                <div class="status-container">
-                    <div class="status-box">
-                        <p id="status" class="awake">AWAKE</p>
-                        <span class="label">Status</span>
-                    </div>
-                     <div class="status-box">
-                        <p id="earValue">0.00</p>
-                        <span class="label">Eye Ratio</span>
-                    </div>
+        <div class="controls">
+            <div class="status-container">
+                <div class="status-box">
+                    <p id="status">INACTIVE</p>
+                    <span class="label">Status</span>
                 </div>
-                <button id="startButton" class="button">Start Detection</button>
+                 <div class="status-box">
+                    <p id="earValue">N/A</p>
+                    <span class="label">Eye Ratio</span>
+                </div>
             </div>
+            <button id="mainButton" class="button" disabled>Loading...</button>
         </div>
     </div>
 
-    <!-- Alert Overlay -->
-    <div id="alert-overlay">
-        <div id="alert-message">WAKE UP!</div>
-    </div>
+    <div id="alert-overlay"><div id="alert-message">WAKE UP!</div></div>
     
-    <!-- Audio alarm linked from an online source (Pixabay) -->
     <audio id="alertSound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_c683f082e7.mp3" preload="auto"></audio>
 
-    <!-- All JavaScript is in this script tag -->
     <script type="module">
-        // Import necessary libraries from CDNs
-        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
-        import { gsap } from 'https://cdn.skypack.dev/gsap@3.9.1';
-        import 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core';
-        import 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl';
-        import * as faceLandmarksDetection from 'https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection';
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.module.js';
+        import { gsap } from 'https://cdn.jsdelivr.net/npm/gsap@3.9.1/index.js';
+        import 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@3.11.0/dist/index.min.js';
+        import 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@3.11.0/dist/index.min.js';
+        import * as faceLandmarksDetection from 'https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.1/dist/face-landmarks-detection.min.js';
 
         // --- DOM Elements ---
-        const permissionOverlay = document.getElementById('permission-overlay');
-        const permissionButton = document.getElementById('permissionButton');
-        const mainContainer = document.getElementById('main-container');
         const video = document.getElementById('video');
-        const startButton = document.getElementById('startButton');
+        const mainButton = document.getElementById('mainButton');
         const statusEl = document.getElementById('status');
         const earValueEl = document.getElementById('earValue');
         const alertOverlay = document.getElementById('alert-overlay');
         const alertSound = document.getElementById('alertSound');
         const overlayCanvas = document.getElementById('overlayCanvas');
+        const infoText = document.getElementById('infoText');
         const ctx = overlayCanvas.getContext('2d');
 
-        // --- Detection Constants ---
+        // --- Detection Constants & State Variables ---
         const EAR_THRESHOLD = 0.21;
         const CONSECUTIVE_FRAMES = 20;
-
-        // --- State Variables ---
         let detector;
         let detectionInterval;
         let closedEyeFrames = 0;
         let isAlerting = false;
         let isRunning = false;
         let modelReady = false;
-
-        // --- Three.js Background Setup ---
+        
+        // --- 3D Background ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('three-bg').appendChild(renderer.domElement);
-
-        // NEW: Icosahedron Geometry
-        const geometry = new THREE.IcosahedronGeometry(1.5, 0); // Radius 1.5, detail 0
+        const geometry = new THREE.IcosahedronGeometry(1.5, 0);
         const material = new THREE.MeshBasicMaterial({ color: 0x778da9, wireframe: true });
         const icosahedron = new THREE.Mesh(geometry, material);
         scene.add(icosahedron);
-        
-        camera.position.z = 3;
-
+        camera.position.z = 3.5;
         window.addEventListener('resize', () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
         });
-
         function animate3D() {
             requestAnimationFrame(animate3D);
-            icosahedron.rotation.y += 0.001;
             icosahedron.rotation.x += 0.001;
+            icosahedron.rotation.y += 0.001;
             renderer.render(scene, camera);
         }
         animate3D();
 
         // --- Main Application Logic ---
 
-        /**
-         * Initializes the ML model.
-         */
         async function initializeModel() {
+            modelReady = false;
+            mainButton.disabled = true;
+            mainButton.innerText = 'Loading AI Model...';
+            infoText.innerText = 'Downloading model, please wait...';
+            infoText.classList.remove('error');
+
             try {
                 const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
                 const detectorConfig = {
                     runtime: 'mediapipe',
-                    solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
+                    solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619',
                 };
                 detector = await faceLandmarksDetection.createDetector(model, detectorConfig);
                 modelReady = true;
-                permissionButton.disabled = false;
-                permissionButton.innerText = 'Grant Camera Access';
+                mainButton.disabled = false;
+                mainButton.innerText = 'Start Detection';
+                infoText.innerText = 'Ready. Click "Start" to begin.';
                 console.log("Model loaded successfully.");
             } catch (error) {
                 console.error("Model initialization failed:", error);
-                permissionButton.innerText = 'Error - Refresh';
-                alert("Could not load the AI model. Please check your connection and refresh the page.");
-            }
-        }
-
-        /**
-         * Requests camera permission from the user.
-         */
-        async function requestCameraPermission() {
-            try {
-                permissionButton.disabled = true;
-                permissionButton.innerText = 'Awaiting Permission...';
-                
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                // We got permission. Stop the track immediately. We'll start it again later.
-                stream.getTracks().forEach(track => track.stop());
-                
-                // Animate the UI transition
-                gsap.to(permissionOverlay, {
-                    opacity: 0,
-                    duration: 0.5,
-                    onComplete: () => {
-                        permissionOverlay.style.display = 'none';
-                        mainContainer.style.display = 'flex';
-                        gsap.from(mainContainer, { opacity: 0, duration: 0.5 });
-                    }
-                });
-
-            } catch (err) {
-                console.error("Camera access denied:", err);
-                permissionButton.disabled = false;
-                permissionButton.innerText = 'Grant Camera Access';
-                alert("Camera permission is required. Please enable it in your browser settings and try again.");
+                mainButton.disabled = false;
+                mainButton.innerText = 'Retry Loading Model';
+                infoText.innerHTML = 'Failed to load model.<br>Check internet & disable ad-blockers, then retry.';
+                infoText.classList.add('error');
             }
         }
 
@@ -373,57 +274,40 @@
 
         async function detectDrowsiness() {
             if (!detector || !isRunning) return;
+            try {
+                const faces = await detector.estimateFaces(video, { flipHorizontal: false });
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-            const faces = await detector.estimateFaces(video, { flipHorizontal: false });
-            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-            if (faces.length > 0) {
-                const keypoints = faces[0].keypoints;
-                const leftEyeIndices = [33, 160, 158, 133, 153, 144];
-                const rightEyeIndices = [362, 385, 387, 263, 373, 380];
-                
-                const leftEye = leftEyeIndices.map(i => keypoints[i]);
-                const rightEye = rightEyeIndices.map(i => keypoints[i]);
-
-                const leftEAR = calculateEAR(leftEye);
-                const rightEAR = calculateEAR(rightEye);
-                const avgEAR = (leftEAR + rightEAR) / 2.0;
-                
-                earValueEl.innerText = avgEAR.toFixed(2);
-                
-                // Draw eye landmarks for visualization
-                ctx.fillStyle = "rgba(119, 141, 169, 0.7)";
-                [...leftEye, ...rightEye].forEach(point => {
-                    ctx.beginPath();
-                    ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
-                    ctx.fill();
-                });
-
-                if (avgEAR < EAR_THRESHOLD) {
-                    closedEyeFrames++;
-                } else {
-                    closedEyeFrames = 0;
-                    if (isAlerting) {
-                        isAlerting = false;
-                        gsap.to(alertOverlay, { display: 'none', opacity: 0, duration: 0.5 });
-                        gsap.killTweensOf('#alert-message');
-                        alertSound.pause();
-                        alertSound.currentTime = 0;
+                if (faces.length > 0) {
+                    const keypoints = faces[0].keypoints;
+                    const leftEye = [33, 160, 158, 133, 153, 144].map(i => keypoints[i]);
+                    const rightEye = [362, 385, 387, 263, 373, 380].map(i => keypoints[i]);
+                    const avgEAR = (calculateEAR(leftEye) + calculateEAR(rightEye)) / 2.0;
+                    earValueEl.innerText = avgEAR.toFixed(2);
+                    
+                    if (avgEAR < EAR_THRESHOLD) closedEyeFrames++;
+                    else {
+                        closedEyeFrames = 0;
+                        if (isAlerting) {
+                            isAlerting = false;
+                            gsap.to(alertOverlay, { display: 'none', opacity: 0, duration: 0.5 });
+                            gsap.killTweensOf('#alert-message');
+                            alertSound.pause();
+                            alertSound.currentTime = 0;
+                        }
+                        statusEl.innerText = 'AWAKE'; statusEl.className = 'awake';
                     }
-                    statusEl.innerText = 'AWAKE';
-                    statusEl.className = 'awake';
+                    if (closedEyeFrames >= CONSECUTIVE_FRAMES && !isAlerting) {
+                        isAlerting = true;
+                        statusEl.innerText = 'DROWSY'; statusEl.className = 'drowsy';
+                        triggerAlert();
+                    }
+                } else {
+                    statusEl.innerText = 'NO FACE'; statusEl.className = 'drowsy';
+                    earValueEl.innerText = 'N/A';
                 }
-
-                if (closedEyeFrames >= CONSECUTIVE_FRAMES && !isAlerting) {
-                    isAlerting = true;
-                    statusEl.innerText = 'DROWSY';
-                    statusEl.className = 'drowsy';
-                    triggerAlert();
-                }
-            } else {
-                statusEl.innerText = 'NO FACE';
-                statusEl.className = 'drowsy';
-                earValueEl.innerText = 'N/A';
+            } catch (error) {
+                console.error("Detection failed:", error);
             }
         }
         
@@ -438,58 +322,65 @@
             );
         }
         
-        async function toggleDetection() {
-            if (isRunning) {
-                // Stop detection
-                isRunning = false;
-                clearInterval(detectionInterval);
-                video.srcObject.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-                startButton.innerText = 'Start Detection';
-                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-                statusEl.innerText = 'INACTIVE';
-                statusEl.className = '';
-            } else {
-                // Start detection
-                try {
-                    startButton.disabled = true;
-                    startButton.innerText = 'Starting Camera...';
+        async function startDetection() {
+            mainButton.disabled = true;
+            mainButton.innerText = 'Starting Camera...';
+            infoText.innerText = 'Please grant camera permission.';
 
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: 640, height: 480 },
-                    });
-                    video.srcObject = stream;
-                    await new Promise(resolve => {
-                        video.onloadedmetadata = () => {
-                            overlayCanvas.width = video.videoWidth;
-                            overlayCanvas.height = video.videoHeight;
-                            resolve();
-                        };
-                    });
-                    
-                    isRunning = true;
-                    detectionInterval = setInterval(detectDrowsiness, 1000 / 30); // ~30 FPS
-                    startButton.innerText = 'Stop Detection';
-                    startButton.disabled = false;
-                    
-                } catch(err) {
-                    console.error("Error starting camera:", err);
-                    alert("Could not start the camera. Please ensure it's not being used by another application.");
-                    startButton.disabled = false;
-                    startButton.innerText = 'Start Detection';
-                }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                video.srcObject = stream;
+                await new Promise(resolve => {
+                    video.onloadedmetadata = () => {
+                        overlayCanvas.width = video.videoWidth;
+                        overlayCanvas.height = video.videoHeight;
+                        resolve();
+                    };
+                });
+                isRunning = true;
+                detectionInterval = setInterval(detectDrowsiness, 1000 / 30);
+                mainButton.innerText = 'Stop Detection';
+                mainButton.disabled = false;
+                infoText.innerText = 'Detection is active. Stay safe!';
+            } catch(err) {
+                console.error("Camera access denied or error:", err);
+                infoText.innerText = 'Camera permission denied. Please enable it in browser settings.';
+                infoText.classList.add('error');
+                mainButton.disabled = false;
+                mainButton.innerText = 'Start Detection';
             }
         }
 
-        // --- Event Listeners & Initialization ---
-        permissionButton.addEventListener('click', requestCameraPermission);
-        startButton.addEventListener('click', toggleDetection);
-        
-        // Disable button until model is loaded
-        permissionButton.disabled = true;
-        permissionButton.innerText = 'Loading AI Model...';
-        initializeModel();
+        function stopDetection() {
+            isRunning = false;
+            clearInterval(detectionInterval);
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            mainButton.innerText = 'Start Detection';
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            statusEl.innerText = 'INACTIVE'; statusEl.className = '';
+            earValueEl.innerText = 'N/A';
+            infoText.innerText = 'Detection stopped. Click "Start" to resume.';
+            infoText.classList.remove('error');
+        }
 
+        // --- Event Listener ---
+        mainButton.addEventListener('click', () => {
+            if (!modelReady) {
+                initializeModel(); // Retry loading
+            } else {
+                if (isRunning) {
+                    stopDetection();
+                } else {
+                    startDetection();
+                }
+            }
+        });
+        
+        // --- Initial Load ---
+        initializeModel();
     </script>
 </body>
 </html>
