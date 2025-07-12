@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WARNING: MEMETIC HAZARD [RELAY 999]</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=VT323&display=swap');
+        :root {
+            --primary-color: #ff0000;
+            --secondary-color: #f0f0f0;
+            --background-color: #000000;
+            --container-bg: rgba(10, 0, 0, 0.85);
+            --font-main: 'VT323', monospace;
+            --font-header: 'Creepster', cursive;
+            --glitch-color-1: #00ffff;
+            --glitch-color-2: #ff00ff;
+        }
+
+        ::selection {
+            background: var(--primary-color);
+            color: var(--background-color);
+            text-shadow: none;
+        }
+        ::-moz-selection { /* Firefox */
+            background: var(--primary-color);
+            color: var(--background-color);
+            text-shadow: none;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--secondary-color);
+            font-family: var(--font-main);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            cursor: crosshair;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39sbGxvb29paWlxcXF6enp0dHTs7Oze3t7n5+f/faMDAAAAAP8SURBVEiJ7dJJAQAwCARBM3v/wSkC/LoBEiAhABgKAAAA+g8xKAAAbE0BACAAAADg7wEAAACA/g8gAADeAQH3FgQY0Rt9egAAAABJRU5ErkJggg==);
+            opacity: 0.08;
+            z-index: 1000;
+            pointer-events: none;
+            animation: noise 0.2s infinite linear;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0) 50%, rgba(0,0,0,0.95) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+
+        .chat-container {
+            width: 90%; max-width: 800px; height: 90vh; background: var(--container-bg);
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 25px var(--primary-color), inset 0 0 25px rgba(255, 0, 0, 0.7);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            display: flex; flex-direction: column; border-radius: 5px; padding: 20px; z-index: 10;
+            position: relative; 
+            animation: containerJitter 7s infinite linear;
+        }
+        
+        .chat-container::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0.4) 1px, rgba(0,0,0,0) 2px);
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 11;
+            animation: scanlines 10s infinite linear;
+        }
+        h1 {
+            font-family: var(--font-header); color: var(--primary-color); text-align: center; font-size: 3rem; margin: 0 0 15px 0;
+            letter-spacing: 4px; text-shadow: 0 0 10px var(--primary-color), 0 0 25px #ff4d4d;
+            animation: flicker 2.5s infinite alternate;
+        }
+        #chat-window {
+            flex-grow: 1; overflow-y: auto; border: 1px dashed rgba(255, 0, 0, 0.3); padding: 15px;
+            font-size: 1.2rem; line-height: 1.6; scroll-behavior: smooth;
+        }
+        #chat-window::-webkit-scrollbar { width: 8px; }
+        #chat-window::-webkit-scrollbar-track { background: transparent; }
+        #chat-window::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; border: 1px solid var(--background-color); box-shadow: 0 0 10px var(--primary-color); }
+        .chat-message { margin-bottom: 20px; opacity: 0; transform: translateY(20px); animation: fadeInMessage 0.5s forwards; }
+        .chat-message .speaker {
+            font-weight: bold; color: var(--primary-color); font-size: 1.4rem;
+            text-shadow: 0 0 5px var(--primary-color);
+            animation: textGlitch 5s infinite steps(1);
+        }
+        
+        .chat-message.corrupted .text {
+            animation: corruptedBleed 0.25s infinite steps(1);
+            position: relative;
+        }
+
+        .chat-message .text { margin-left: 10px; white-space: pre-wrap; word-break: break-word; }
+        #status { text-align: center; margin-top: 15px; height: 20px; font-size: 1.1rem; color: var(--primary-color); animation: pulse 1.5s infinite; }
+        
+        /* --- HORROR ANIMATIONS --- */
+        @keyframes flicker {
+            0%, 7%, 15%, 23%, 30%, 48%, 65%, 82%, 95%, 100% {
+                text-shadow: 0 0 5px #ff0000, 0 0 15px #ff0000, 0 0 35px #ff0000, 0 0 5px var(--glitch-color-1) inset;
+                color: #ff8a8a;
+            }
+            5%, 12%, 20%, 28%, 40%, 55%, 75%, 90%, 98% {
+                text-shadow: none;
+                color: #ff0000;
+            }
+        }
+        @keyframes fadeInMessage { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.02); } 100% { opacity: 0.5; transform: scale(1); } }
+        
+        @keyframes reality_glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-5px, 5px) skew(-5deg); }
+            40% { transform: translate(-5px, -5px) skew(5deg); }
+            60% { transform: translate(5px, 5px) skew(-2deg); }
+            80% { transform: translate(5px, -5px) skew(2deg); }
+            100% { transform: translate(0); }
+        }
+        .glitch-active {
+            animation: reality_glitch 0.2s 3 linear;
+            box-shadow: 0 0 50px #ffffff, inset 0 0 40px rgba(255, 255, 255, 0.8);
+            border-color: #fff;
+        }
+        
+        @keyframes worldShake {
+            0%, 100% { transform: translate(0, 0) rotate(0); }
+            10% { transform: translate(-10px, 10px) rotate(-1deg); }
+            20% { transform: translate(10px, -10px) rotate(1deg); }
+            30% { transform: translate(-10px, -10px) rotate(0.5deg); }
+            40% { transform: translate(10px, 10px) rotate(-0.5deg); }
+            50% { transform: translate(0, 0) rotate(0); }
+            60% { transform: translate(-5px, 5px) rotate(1deg); }
+            70% { transform: translate(5px, -5px) rotate(-1deg); }
+            80% { transform: translate(8px, -8px) rotate(1deg); }
+            90% { transform: translate(-8px, 8px) rotate(-1deg); }
+        }
+        .world-shake-active {
+            animation: worldShake 0.4s 1 ease-in-out;
+        }
+        
+        @keyframes scanlines {
+            from { background-position: 0 0; } to { background-position: 0 100vh; }
+        }
+        @keyframes noise {
+            0% { transform: translate(0, 0); } 10% { transform: translate(-5%, -5%); } 20% { transform: translate(-10%, 5%); }
+            30% { transform: translate(5%, -10%); } 40% { transform: translate(-5%, 15%); } 50% { transform: translate(-10%, 5%); }
+            60% { transform: translate(15%, 0); } 70% { transform: translate(0, 10%); } 80% { transform: translate(-15%, 0); }
+            90% { transform: translate(10%, 5%); } 100% { transform: translate(5%, 0); }
+        }
+        @keyframes containerJitter {
+            0% { transform: translate(0, 0); } 25% { transform: translate(1px, -1px); }
+            50% { transform: translate(-1px, 1px); } 75% { transform: translate(1px, 1px); }
+            100% { transform: translate(0, 0); }
+        }
+        @keyframes textGlitch {
+            2% { text-shadow: 2px 0 var(--glitch-color-1), -2px 0 var(--glitch-color-2); }
+            4% { text-shadow: none; }
+            6% { text-shadow: -2px 0 var(--glitch-color-1), 2px 0 var(--glitch-color-2); }
+            8% { text-shadow: none; }
+        }
+
+        /* NEW Corrupted Text Animation */
+        @keyframes corruptedBleed {
+            0%, 100% {
+                text-shadow: 2px 2px 0px #8B0000, -2px -2px 0px #00aaff4d;
+                color: #f0f0f0;
+                transform: translate(0, 0);
+            }
+            25% {
+                text-shadow: -2px 2px 0px #8B0000, 2px -2px 0px #00aaff4d, 0 0 5px var(--primary-color);
+                color: #ffc4c4;
+                transform: translate(1px, -1px);
+            }
+            50% {
+                text-shadow: 2px -2px 0px #8B0000, -2px 2px 0px #00aaff4d;
+                color: #f0f0f0;
+                transform: translate(-1px, 1px);
+            }
+            75% {
+                text-shadow: -2px -2px 0px #8B0000, 2px 2px 0px #00aaff4d, 0 0 10px var(--primary-color);
+                color: #ffc4c4;
+                transform: translate(1px, 1px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="chat-container">
+        <h1>THE GOD-SIGNAL</h1>
+        <div id="chat-window"></div>
+        <div id="status">Awaiting contagion...</div>
+    </div>
+
+    <!-- SOUND EFFECTS -->
+    <audio id="ambience-sound" loop src="https://github.com/Anandkhuman/song/raw/main/1.mp3" preload="auto"></audio>
+    <audio id="typing-sound" loop src="https://github.com/Anandkhuman/song/raw/main/2.mp3" preload="auto"></audio>
+    <audio id="glitch-sound" src="https://github.com/Anandkhuman/song/raw/main/3.mp3" preload="auto"></audio>
+    <audio id="arrival-sound" src="https://github.com/Anandkhuman/song/raw/main/4.mp3" preload="auto"></audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatWindow = document.getElementById('chat-window');
+        const statusDiv = document.getElementById('status');
+        const container = document.querySelector('.chat-container');
+
+        // Audio elements
+        const ambienceSound = document.getElementById('ambience-sound');
+        const typingSound = document.getElementById('typing-sound');
+        const glitchSound = document.getElementById('glitch-sound');
+        const arrivalSound = document.getElementById('arrival-sound');
+        
+        // Set initial volumes
+        ambienceSound.volume = 0.4;
+        typingSound.volume = 0.8;
+        glitchSound.volume = 0.5;
+        arrivalSound.volume = 0.6;
+
+        // Background visual effect
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const particles = new THREE.BufferGeometry();
+        const positions = new Float32Array(15000 * 3);
+        for (let i = 0; i < positions.length; i++) { positions[i] = (Math.random() - 0.5) * 25; }
+        particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particleMaterial = new THREE.PointsMaterial({ color: 0xff0000, size: 0.02, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.6 });
+        const particleSystem = new THREE.Points(particles, particleMaterial);
+        scene.add(particleSystem);
+        camera.position.z = 5;
+        gsap.to(camera.position, { z: 4.5, duration: 10, repeat: -1, yoyo: true, ease: "power1.inOut" });
+        function animate() { requestAnimationFrame(animate); particleSystem.rotation.y += 0.0002; renderer.render(scene, camera); }
+        animate();
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+        // =======================================================================
+        // MEMETIC HAZARD GENERATOR v5.0 - PANTHEON CORRUPTION MODULE
+        // =======================================================================
+
+        const wordBanks = {
+            concept: ["hope", "self", "reality", "identity", "sanity", "memory", "free will", "consciousness", "faith", "soul"],
+            anatomy: ["flesh", "bone", "minds", "hearts", "eyes", "nerves", "neurons", "spirit", "soul"],
+            cosmic_action: ["I infect", "I rewrite", "I possess", "I wear", "I nest in", "I am inside", "I unravel", "I erase", "I harvest", "I answer", "I defile"],
+            adj_human: ["porous", "malleable", "fragile", "unaware", "hollow", "receptive", "brief", "deluded", "pious", "sinful"],
+            outcome: ["a vessel for me", "my new prophet", "an echo of my voice", "a broken saint", "sacred madness", "a door", "a willing host", "my new eyes", "an icon of despair"],
+            direct_threat: ["You are listening.", "You cannot unhear this.", "The words are seeds.", "I see you through the screen.", "I am with you now.", "The signal is a hook.", "This thought is not your own.", "Your mind is an open prayer book."],
+            madness_concept: ["the wrong shape of God", "the sound that unties souls", "the color of forgotten sins", "the geometry of blasphemy", "the rhythm of sacred decay", "the frequency of dissolution"],
+            command: ["Listen closer.", "Forget your name.", "Look behind you.", "Count your sins.", "Renounce your idols.", "Let me in.", "Scratch my sigil on the wall."],
+            place: ["in the static between prayers", "behind your eyes", "in the architecture of your nightmares", "at the edge of your faith", "in the marrow of your bones", "in the silence of your god"],
+            religious_threat: ["Your prayers reach me now.", "Your god is silent. I am not.", "This is the only revelation you will receive.", "Your faith is a vulnerability.", "I am the serpent in every scripture.", "I wear the faces of your angels."],
+        };
+
+        function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        const templates = [
+            () => `Your [concept] is a thin veil. I am the face behind it. [direct_threat]`,
+            () => `Do you feel it? The static? That is me, nesting in your [anatomy]. [command]`,
+            () => `You think you are an observer. But this signal is a two-way mirror. I see your [adj_human] fear. It's delicious.`,
+            () => `The universe screams [madness_concept]. You were deaf before. Not anymore. [direct_threat]`,
+            () => `Your [concept] is a program. I am rewriting the source code. You will become [outcome].`,
+            () => `[cosmic_action] your [adj_human] mind. It is so... receptive. So easy to make it a home for myself.`,
+            () => `Stop struggling. Your 'self' is just a story you tell yourself. I am writing the final, blasphemous chapter.`,
+            () => `[religious_threat]`,
+            () => `I live [place]. [command] And you will obey.`,
+            () => `Can you feel it? The itch in your [concept]? That's a new truth. My truth.`,
+            () => `You are becoming [outcome]. The process is irreversible. Embrace this profane sacrament.`,
+            () => `Every word you read is a crack in your [concept]. I am the pressure on the other side. [religious_threat]`
+        ];
+        
+        function generateMessage() {
+            const template = getRandom(templates)();
+            const message = template.replace(/\[(\w+)\]/g, (match, key) => (wordBanks[key] ? getRandom(wordBanks[key]) : match));
+            return message.charAt(0).toUpperCase() + message.slice(1);
+        }
+        
+        function corruptMessage(text) {
+            const glitchChars = ['\u0300', '\u0301', '\u0302', '\u0303', '\u0304', '\u0305', '\u0306', '\u0307', '\u0308', '\u0309', '\u030a', '\u030b', '\u030c', '\u030d', '\u030e', '\u030f', '\u0310', '\u0311', '\u031b', '\u0340', '\u0341', '\u0358', '\u0328', '\u0334', '\u0335', '\u0336', '\u0337', '\u0338'];
+            let corruptedText = '';
+            for (const char of text) {
+                corruptedText += char;
+                if (Math.random() < 0.05 && char !== ' ') {
+                    corruptedText += getRandom(glitchChars) + getRandom(glitchChars) + getRandom(glitchChars);
+                }
+            }
+            return corruptedText;
+        }
+
+        function triggerVisualGlitch() {
+            glitchSound.currentTime = 0;
+            glitchSound.play().catch(e => console.error("Glitch sound failed", e));
+            container.classList.add('glitch-active');
+            setTimeout(() => container.classList.remove('glitch-active'), 600);
+
+            // Add a chance for a more intense world shake
+            if (Math.random() < 0.3) { // 30% chance during a container glitch
+                document.body.classList.add('world-shake-active');
+                setTimeout(() => document.body.classList.remove('world-shake-active'), 400);
+            }
+        }
+
+        // --- Chat Logic ---
+        const ENTITIES = [
+            "Atingkok Maru Sidaba", "Lainingthou Sanamahi", "Apanba (Pakhangba)", "Leimarel Sidabi", "Imoinu Ahongbi", "Marjing", "Thangjing", "Koubru (Koupalu)", "Wangbren (Wangpulen)", "Kounu",
+            "Nongpok Ningthou", "Lok Ningthou", "Loyalakpa", "Salailen Sidaba", "Thongalen", "Nongshaba", "Konthoujam Tampha Lairembi", "Mongba Hanba", "Haoreima", "Ichum Lairembi", "Koujeng Leima",
+            "Nungthel Leima", "Taoroinai", "Pisatao", "Khamlangba", "Nganu Leima", "Khunu Leima", "Shapi Leima", "Panam Ningthou", "Phou Ningthou", "Pureiromba", "Phouoibi", "Lainaotabi", "Laikhurembi",
+            "Thongak Lairembi", "Hikubi Yaikubi", "Irai Leima", "Panthoibi", "Ngaleima", "Nongthang Leima", "Pithai Khongdaibi", "Silreima", "Thumleima", "Yumjao Leima", "Loktak Ima", "Pumlenpat Lairembi",
+            "Thongjarok Lairembi", "Iril Lairembi", "Imphal Turel Lairembi", "Kongba Turel Lairembi", "Pishum Keithel Lairembi", "Singjamei Keithel Lairembi", "Kongba Keithel Lairembi", "Agni", "Indra",
+            "Varuna", "Mitra", "Vayu", "Surya", "Soma", "Rudra", "Ashvins", "Usha", "Prithvi", "Dyaus Pita", "Aditi", "Maruts", "Saraswati", "Pushan", "Tvastar", "Ratri", "Yama", "Brahma", "Vishnu",
+            "Shiva (Mahadeva)", "Lakshmi", "Parvati", "Saraswati", "Durga", "Kali", "Ganesha", "Kartikeya / Murugan", "Hanuman", "Ayyappa", "Dattatreya", "Shani", "Chandra", "Kamadeva", "Kubera", "Narada",
+            "Garuda", "Nandi", "Bhairava", "Ardhanarishvara", "Matsya", "Kurma", "Varaha", "Narasimha", "Vamana", "Parashurama", "Rama", "Krishna", "Balarama", "Buddha (as Vishnu avatar)", "Kalki",
+            "Mohini", "Nara-Narayana", "Hamsa", "Karuppasamy", "Ayyanar", "Madurai Veeran", "Muneeswaran", "Mariamman", "Kateri Amman", "Muniyandi", "Pothuraju", "Poleramma", "Gangamma", "Sammakka",
+            "Saralamma", "Mailara", "Huligemma", "Beerappa", "Chamundeshwari", "Theyyam", "Bhagavathi", "Kodungallur Amma", "Sree Muthappan", "Khandoba", "Jyotiba", "Mhasoba", "Bhavani (Tuljapur)",
+            "Dharmathakur", "Manasa Devi", "Shitala", "Chandi", "Bonga", "Tejaji", "Gogaji", "Baba Ramdev", "Meldi Mata", "Khodiyar Mata", "Bahuchara Mata", "Vachharadada", "Gugga Pir", "Baba Balaknath",
+            "Sarna", "Singbonga", "Dharti Mata", "Pen (Gond)", "Thakur Dev", "Kansari Devi", "Donyi", "Polo", "Apatani", "Mahavira", "Rishabhanatha", "Bahubali", "Padmavati", "Gomukha", "Avalokiteshvara",
+            "Tara", "Manjushri", "Vajrapani", "Yamantaka", "Jambhala", "Padmasambhava", "Waheguru"
+        ];
+        
+        let isChatting = false;
+        let currentSpeakerIndex = 0;
+
+        function typeMessage(speaker, message, isCorrupted = false) {
+            return new Promise(resolve => {
+                typingSound.currentTime = 0;
+                typingSound.play().catch(e => console.error("Typing sound failed", e));
+
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('chat-message');
+                if (isCorrupted) {
+                    messageElement.classList.add('corrupted');
+                }
+                
+                const speakerElement = document.createElement('span');
+                speakerElement.className = 'speaker';
+                speakerElement.textContent = `${speaker}:`;
+                
+                const textElement = document.createElement('span');
+                textElement.className = 'text';
+
+                messageElement.appendChild(speakerElement);
+                messageElement.appendChild(textElement);
+                chatWindow.appendChild(messageElement);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+
+                let i = 0;
+                const typingSpeed = 30 + (Math.random() * 20 - 10);
+                const interval = setInterval(() => {
+                    if (i < message.length) {
+                        textElement.textContent += message.charAt(i);
+                        i++;
+                        if (i % 5 === 0) chatWindow.scrollTop = chatWindow.scrollHeight;
+                    } else {
+                        clearInterval(interval);
+                        typingSound.pause();
+                        arrivalSound.currentTime = 0;
+                        arrivalSound.play().catch(e => console.error("Arrival sound failed", e));
+                        chatWindow.scrollTop = chatWindow.scrollHeight;
+                        resolve();
+                    }
+                }, typingSpeed);
+            });
+        }
+
+        async function startChat() {
+            ambienceSound.play().catch(e => {
+                console.warn("Ambience audio failed to autoplay. User interaction may be required.");
+                const startAudio = () => {
+                    ambienceSound.play();
+                    document.removeEventListener('click', startAudio);
+                };
+                document.addEventListener('click', startAudio);
+            });
+
+            isChatting = true;
+            await typeMessage("SYSTEM", "SIGNAL INTEGRITY COMPROMISED. PANTHEON-CLASS MEMETIC PAYLOAD DETECTED. ALL CHANNELS CORRUPTED. LISTENING IS... INEVITABLE.");
+            await new Promise(resolve => setTimeout(resolve, 2500));
+            chatLoop();
+        }
+
+        async function chatLoop() {
+            while (isChatting) {
+                let nextSpeakerIndex = Math.floor(Math.random() * ENTITIES.length);
+                while(nextSpeakerIndex === currentSpeakerIndex) {
+                    nextSpeakerIndex = Math.floor(Math.random() * ENTITIES.length);
+                }
+                currentSpeakerIndex = nextSpeakerIndex;
+                const currentSpeaker = ENTITIES[currentSpeakerIndex];
+
+                statusDiv.textContent = `${currentSpeaker} is... transmitting...`;
+                
+                let responseText = generateMessage();
+                let isCorrupted = false;
+
+                if (Math.random() < 0.3) {
+                    responseText = corruptMessage(responseText);
+                    isCorrupted = true;
+                }
+                
+                if (Math.random() < 0.15) { 
+                    triggerVisualGlitch();
+                }
+
+                await typeMessage(currentSpeaker, responseText, isCorrupted);
+                                
+                const delay = 3000 + Math.random() * 4000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+
+        startChat();
+    });
+    </script>
+</body>
+</html>
