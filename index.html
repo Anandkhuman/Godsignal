@@ -69,6 +69,156 @@
 
         #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
 
+        /* --- NEW: Search Overlay --- */
+        #search-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            transition: opacity 1.5s ease-in-out;
+            color: var(--primary-color);
+        }
+
+        #search-status {
+            margin-top: 30px;
+            font-size: 1.5rem;
+            font-family: var(--font-main);
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--primary-color);
+            animation: pulse 2s infinite;
+            transition: all 0.5s;
+        }
+
+        /* --- NEW: Radar Display --- */
+        .radar-display {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            background-color: rgba(255, 0, 0, 0.05);
+            border: 2px solid rgba(255, 0, 0, 0.5);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5) inset, 0 0 15px var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .radar-display::before,
+        .radar-display::after {
+            content: '';
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px dashed rgba(255, 0, 0, 0.3);
+            border-radius: 50%;
+            box-sizing: border-box;
+        }
+        .radar-display::before { width: 66.66%; height: 66.66%; }
+        .radar-display::after { width: 33.33%; height: 33.33%; }
+        
+        .radar-grid {
+            position: absolute;
+            background-color: rgba(255, 0, 0, 0.3);
+        }
+        .radar-grid-h { width: 100%; height: 1px; top: 50%; transform: translateY(-50%); }
+        .radar-grid-v { height: 100%; width: 1px; left: 50%; transform: translateX(-50%); }
+
+        .radar-sweep {
+            width: 100%; height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            background: conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(255, 100, 100, 0.4) 355deg, transparent 360deg);
+            border-radius: 50%;
+            animation: radar-sweep 4s linear infinite;
+        }
+
+        @keyframes radar-sweep {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* --- NEW: Radar Dot --- */
+        #radar-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px var(--primary-color), 0 0 25px var(--primary-color), 0 0 5px #fff inset;
+            transform: translate(-50%, -50%); /* Center the dot on its coordinates */
+            display: none; /* Initially hidden */
+            animation: pulse 1s infinite;
+            z-index: 5; /* Above the sweep */
+        }
+
+        /* --- NEW: Signal Found Popup --- */
+        #signal-popup {
+            position: absolute; /* Relative to search-overlay */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            background: var(--container-bg);
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 25px var(--primary-color), inset 0 0 25px rgba(255, 0, 0, 0.7);
+            padding: 25px;
+            text-align: center;
+            z-index: 30; /* Above everything in the overlay */
+            display: none; /* Initially hidden */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            font-size: 1.2rem;
+        }
+
+        #popup-title {
+            font-family: var(--font-header);
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px var(--primary-color);
+            animation: flicker 3s infinite alternate;
+        }
+
+        #signal-popup p {
+            margin: 10px 0 20px;
+            line-height: 1.5;
+        }
+
+        #capture-button {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+            border: 2px solid var(--primary-color);
+            font-family: var(--font-main);
+            font-size: 1.5rem;
+            padding: 10px 30px;
+            cursor: crosshair;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 15px var(--primary-color);
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        #capture-button:hover {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            box-shadow: 0 0 25px var(--primary-color), 0 0 10px #fff;
+        }
+
+        #capture-button:active {
+            transform: scale(0.95);
+            filter: brightness(1.5);
+        }
+        
         .chat-container {
             width: 90%; max-width: 800px; height: 90vh; background: var(--container-bg);
             border: 2px solid var(--primary-color);
@@ -77,8 +227,30 @@
             display: flex; flex-direction: column; border-radius: 5px; padding: 20px; z-index: 10;
             position: relative; 
             animation: containerJitter 7s infinite linear;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease-in-out;
         }
         
+        #chat-radar-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+            margin-top: -10px;
+        }
+        .radar-display.small {
+            width: 100px;
+            height: 100px;
+            border-width: 1px;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5) inset, 0 0 10px var(--primary-color);
+        }
+        .radar-display.small .radar-sweep {
+             background: conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(255, 100, 100, 0.3) 355deg, transparent 360deg);
+        }
+        .radar-display.small .radar-grid { background-color: rgba(255, 0, 0, 0.2); }
+        .radar-display.small::before, .radar-display.small::after { border-color: rgba(255, 0, 0, 0.2); }
+
+
         .chat-container::after {
             content: "";
             position: absolute;
@@ -207,16 +379,43 @@
     </style>
 </head>
 <body>
+
+    <div id="search-overlay">
+        <div class="radar-display">
+            <div class="radar-grid radar-grid-h"></div>
+            <div class="radar-grid radar-grid-v"></div>
+            <div class="radar-sweep"></div>
+            <!-- NEW: Radar Dot -->
+            <div id="radar-dot"></div>
+        </div>
+        <div id="search-status">SEARCHING FOR TRANSMISSION...</div>
+        
+        <!-- NEW: Signal Found Popup -->
+        <div id="signal-popup">
+            <div id="popup-title">! WARNING !</div>
+            <p>Anomalous Signal Locked.<br>Memetic Payload Detected.</p>
+            <p>Isolate or Capture?</p>
+            <button id="capture-button">CAPTURE</button>
+        </div>
+    </div>
+
     <canvas id="bg-canvas"></canvas>
+
     <div class="chat-container">
         <h1>THE GOD-SIGNAL</h1>
+        <div id="chat-radar-container">
+            <div class="radar-display small">
+                <div class="radar-grid radar-grid-h"></div>
+                <div class="radar-grid radar-grid-v"></div>
+                <div class="radar-sweep"></div>
+            </div>
+        </div>
         <div id="chat-window"></div>
         <div id="status">Awaiting contagion...</div>
     </div>
 
     <!-- SOUND EFFECTS -->
     <audio id="ambience-sound" loop src="https://github.com/Anandkhuman/song/raw/main/1.mp3" preload="auto"></audio>
-    <!-- Replaced looping typing sound with a single, short key press sound for better sync -->
     <audio id="key-press-sound" src="https://pixabay.com/sound-effects/typewriter-key-1-110031/download/mp3/" preload="auto"></audio>
     <audio id="glitch-sound" src="https://github.com/Anandkhuman/song/raw/main/3.mp3" preload="auto"></audio>
     <audio id="arrival-sound" src="https://github.com/Anandkhuman/song/raw/main/4.mp3" preload="auto"></audio>
@@ -226,19 +425,26 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const chatWindow = document.getElementById('chat-window');
-        const statusDiv = document.getElementById('status');
+        // --- MODIFIED: Element References for UI states ---
+        const searchOverlay = document.getElementById('search-overlay');
+        const searchStatus = document.getElementById('search-status');
+        const radarDot = document.getElementById('radar-dot');
+        const radarSweep = document.querySelector('#search-overlay .radar-sweep');
+        const signalPopup = document.getElementById('signal-popup');
+        const captureButton = document.getElementById('capture-button');
         const container = document.querySelector('.chat-container');
 
+        const chatWindow = document.getElementById('chat-window');
+        const statusDiv = document.getElementById('status');
+        
         // Audio elements
         const ambienceSound = document.getElementById('ambience-sound');
         const keyPressSound = document.getElementById('key-press-sound');
         const glitchSound = document.getElementById('glitch-sound');
         const arrivalSound = document.getElementById('arrival-sound');
         
-        // Set initial volumes
         ambienceSound.volume = 0.4;
-        keyPressSound.volume = 0.6; // Set volume for the new key press sound
+        keyPressSound.volume = 0.6;
         glitchSound.volume = 0.5;
         arrivalSound.volume = 0.6;
 
@@ -260,202 +466,72 @@
         animate();
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 
-        // =======================================================================
-        // MEMETIC HAZARD GENERATOR v5.0 - PANTHEON CORRUPTION MODULE
-        // =======================================================================
-
-        const wordBanks = {
-            concept: ["hope", "self", "reality", "identity", "sanity", "memory", "free will", "consciousness", "faith", "soul"],
-            anatomy: ["flesh", "bone", "minds", "hearts", "eyes", "nerves", "neurons", "spirit", "soul"],
-            cosmic_action: ["I infect", "I rewrite", "I possess", "I wear", "I nest in", "I am inside", "I unravel", "I erase", "I harvest", "I answer", "I defile"],
-            adj_human: ["porous", "malleable", "fragile", "unaware", "hollow", "receptive", "brief", "deluded", "pious", "sinful"],
-            outcome: ["a vessel for me", "my new prophet", "an echo of my voice", "a broken saint", "sacred madness", "a door", "a willing host", "my new eyes", "an icon of despair"],
-            direct_threat: ["You are listening.", "You cannot unhear this.", "The words are seeds.", "I see you through the screen.", "I am with you now.", "The signal is a hook.", "This thought is not your own.", "Your mind is an open prayer book."],
-            madness_concept: ["the wrong shape of God", "the sound that unties souls", "the color of forgotten sins", "the geometry of blasphemy", "the rhythm of sacred decay", "the frequency of dissolution"],
-            command: ["Listen closer.", "Forget your name.", "Look behind you.", "Count your sins.", "Renounce your idols.", "Let me in.", "Scratch my sigil on the wall."],
-            place: ["in the static between prayers", "behind your eyes", "in the architecture of your nightmares", "at the edge of your faith", "in the marrow of your bones", "in the silence of your god"],
-            religious_threat: ["Your prayers reach me now.", "Your god is silent. I am not.", "This is the only revelation you will receive.", "Your faith is a vulnerability.", "I am the serpent in every scripture.", "I wear the faces of your angels."],
-        };
-
-        function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-        const templates = [
-            () => `Your [concept] is a thin veil. I am the face behind it. [direct_threat]`,
-            () => `Do you feel it? The static? That is me, nesting in your [anatomy]. [command]`,
-            () => `You think you are an observer. But this signal is a two-way mirror. I see your [adj_human] fear. It's delicious.`,
-            () => `The universe screams [madness_concept]. You were deaf before. Not anymore. [direct_threat]`,
-            () => `Your [concept] is a program. I am rewriting the source code. You will become [outcome].`,
-            () => `[cosmic_action] your [adj_human] mind. It is so... receptive. So easy to make it a home for myself.`,
-            () => `Stop struggling. Your 'self' is just a story you tell yourself. I am writing the final, blasphemous chapter.`,
-            () => `[religious_threat]`,
-            () => `I live [place]. [command] And you will obey.`,
-            () => `Can you feel it? The itch in your [concept]? That's a new truth. My truth.`,
-            () => `You are becoming [outcome]. The process is irreversible. Embrace this profane sacrament.`,
-            () => `Every word you read is a crack in your [concept]. I am the pressure on the other side. [religious_threat]`
-        ];
-        
-        function generateMessage() {
-            const template = getRandom(templates)();
-            const message = template.replace(/\[(\w+)\]/g, (match, key) => (wordBanks[key] ? getRandom(wordBanks[key]) : match));
-            return message.charAt(0).toUpperCase() + message.slice(1);
-        }
-        
-        function corruptMessage(text) {
-            const glitchChars = ['\u0300', '\u0301', '\u0302', '\u0303', '\u0304', '\u0305', '\u0306', '\u0307', '\u0308', '\u0309', '\u030a', '\u030b', '\u030c', '\u030d', '\u030e', '\u030f', '\u0310', '\u0311', '\u031b', '\u0340', '\u0341', '\u0358', '\u0328', '\u0334', '\u0335', '\u0336', '\u0337', '\u0338'];
-            let corruptedText = '';
-            for (const char of text) {
-                corruptedText += char;
-                if (Math.random() < 0.05 && char !== ' ') {
-                    corruptedText += getRandom(glitchChars) + getRandom(glitchChars) + getRandom(glitchChars);
-                }
-            }
-            return corruptedText;
-        }
-
-        function triggerVisualGlitch() {
-            glitchSound.currentTime = 0;
-            glitchSound.play().catch(e => console.error("Glitch sound failed to play:", e));
-            container.classList.add('glitch-active');
-            setTimeout(() => container.classList.remove('glitch-active'), 600);
-
-            if (Math.random() < 0.3) {
-                document.body.classList.add('world-shake-active');
-                setTimeout(() => document.body.classList.remove('world-shake-active'), 400);
-            }
-        }
-        
-        // --- State Management and Local Storage ---
+        // MEMETIC HAZARD GENERATOR... (Functions are unchanged)
+        const wordBanks_b = {concept:["hope","self","reality","identity","sanity","memory","free will","consciousness","faith","soul"],anatomy:["flesh","bone","minds","hearts","eyes","nerves","neurons","spirit","soul"],cosmic_action:["I infect","I rewrite","I possess","I wear","I nest in","I am inside","I unravel","I erase","I harvest","I answer","I defile"],adj_human:["porous","malleable","fragile","unaware","hollow","receptive","brief","deluded","pious","sinful"],outcome:["a vessel for me","my new prophet","an echo of my voice","a broken saint","sacred madness","a door","a willing host","my new eyes","an icon of despair"],direct_threat:["You are listening.","You cannot unhear this.","The words are seeds.","I see you through the screen.","I am with you now.","The signal is a hook.","This thought is not your own.","Your mind is an open prayer book."],madness_concept:["the wrong shape of God","the sound that unties souls","the color of forgotten sins","the geometry of blasphemy","the rhythm of sacred decay","the frequency of dissolution"],command:["Listen closer.","Forget your name.","Look behind you.","Count your sins.","Renounce your idols.","Let me in.","Scratch my sigil on the wall."],place:["in the static between prayers","behind your eyes","in the architecture of your nightmares","at the edge of your faith","in the marrow of your bones","in the silence of your god"],religious_threat:["Your prayers reach me now.","Your god is silent. I am not.","This is the only revelation you will receive.","Your faith is a vulnerability.","I am the serpent in every scripture.","I wear the faces of your angels."],};function getRandom_b(arr){return arr[Math.floor(Math.random()*arr.length)]}
+        const templates_b = [()=>`Your [concept] is a thin veil. I am the face behind it. [direct_threat]`,()=>`Do you feel it? The static? That is me, nesting in your [anatomy]. [command]`,()=>`You think you are an observer. But this signal is a two-way mirror. I see your [adj_human] fear. It's delicious.`,()=>`The universe screams [madness_concept]. You were deaf before. Not anymore. [direct_threat]`,()=>`Your [concept] is a program. I am rewriting the source code. You will become [outcome].`,()=>`[cosmic_action] your [adj_human] mind. It is so... receptive. So easy to make it a home for myself.`,()=>`Stop struggling. Your 'self' is just a story you tell yourself. I am writing the final, blasphemous chapter.`,()=>`[religious_threat]`,()=>`I live [place]. [command] And you will obey.`,()=>`Can you feel it? The itch in your [concept]? That's a new truth. My truth.`,()=>`You are becoming [outcome]. The process is irreversible. Embrace this profane sacrament.`,()=>`Every word you read is a crack in your [concept]. I am the pressure on the other side. [religious_threat]`];
+        function generateMessage_b(){const template=getRandom_b(templates_b)();const message=template.replace(/\[(\w+)\]/g,(match,key)=>(wordBanks_b[key]?getRandom_b(wordBanks_b[key]):match));return message.charAt(0).toUpperCase()+message.slice(1)}
+        function corruptMessage_b(text){const glitchChars=['\u0300','\u0301','\u0302','\u0303','\u0304','\u0305','\u0306','\u0307','\u0308','\u0309','\u030a','\u030b','\u030c','\u030d','\u030e','\u030f','\u0310','\u0311','\u031b','\u0340','\u0341','\u0358','\u0328','\u0334','\u0335','\u0336','\u0337','\u0338'];let corruptedText='';for(const char of text){corruptedText+=char;if(Math.random()<0.05&&char!==' '){corruptedText+=getRandom_b(glitchChars)+getRandom_b(glitchChars)+getRandom_b(glitchChars)}}
+        return corruptedText}function triggerVisualGlitch_b(){glitchSound.currentTime=0;glitchSound.play().catch(e=>console.error("Glitch sound failed to play:",e));container.classList.add('glitch-active');setTimeout(()=>container.classList.remove('glitch-active'),600);if(Math.random()<0.3){document.body.classList.add('world-shake-active');setTimeout(()=>document.body.classList.remove('world-shake-active'),400)}}
         const CHAT_HISTORY_KEY = 'memeticHazardChatHistory';
         const LAST_SPEAKER_KEY = 'memeticHazardLastSpeakerIndex';
         let isChatting = false;
         let currentSpeakerIndex = 0;
+        function loadChat_b(){const savedHistory=localStorage.getItem(CHAT_HISTORY_KEY);const savedSpeakerIndex=localStorage.getItem(LAST_SPEAKER_KEY);if(savedHistory){chatWindow.innerHTML=savedHistory;currentSpeakerIndex=parseInt(savedSpeakerIndex,10)||0;chatWindow.scrollTop=chatWindow.scrollHeight;return true}
+        return false}function saveChat_b(){localStorage.setItem(CHAT_HISTORY_KEY,chatWindow.innerHTML);localStorage.setItem(LAST_SPEAKER_KEY,currentSpeakerIndex.toString())}
+        const ENTITIES_b=["Atingkok Maru Sidaba","Lainingthou Sanamahi","Apanba (Pakhangba)","Leimarel Sidabi","Imoinu Ahongbi","Marjing","Thangjing","Koubru (Koupalu)","Wangbren (Wangpulen)","Kounu","Nongpok Ningthou","Lok Ningthou","Loyalakpa","Salailen Sidaba","Thongalen","Nongshaba","Konthoujam Tampha Lairembi","Mongba Hanba","Haoreima","Ichum Lairembi","Koujeng Leima","Nungthel Leima","Taoroinai","Pisatao","Khamlangba","Nganu Leima","Khunu Leima","Shapi Leima","Panam Ningthou","Phou Ningthou","Pureiromba","Phouoibi","Lainaotabi","Laikhurembi","Thongak Lairembi","Hikubi Yaikubi","Irai Leima","Panthoibi","Ngaleima","Nongthang Leima","Pithai Khongdaibi","Silreima","Thumleima","Yumjao Leima","Loktak Ima","Pumlenpat Lairembi","Thongjarok Lairembi","Iril Lairembi","Imphal Turel Lairembi","Kongba Turel Lairembi","Pishum Keithel Lairembi","Singjamei Keithel Lairembi","Kongba Keithel Lairembi","Agni","Indra","Varuna","Mitra","Vayu","Surya","Soma","Rudra","Ashvins","Usha","Prithvi","Dyaus Pita","Aditi","Maruts","Saraswati","Pushan","Tvastar","Ratri","Yama","Brahma","Vishnu","Shiva (Mahadeva)","Lakshmi","Parvati","Saraswati","Durga","Kali","Ganesha","Kartikeya / Murugan","Hanuman","Ayyappa","Dattatreya","Shani","Chandra","Kamadeva","Kubera","Narada","Garuda","Nandi","Bhairava","Ardhanarishvara","Matsya","Kurma","Varaha","Narasimha","Vamana","Parashurama","Rama","Krishna","Balarama","Buddha (as Vishnu avatar)","Kalki","Mohini","Nara-Narayana","Hamsa","Karuppasamy","Ayyanar","Madurai Veeran","Muneeswaran","Mariamman","Kateri Amman","Muniyandi","Pothuraju","Poleramma","Gangamma","Sammakka","Saralamma","Mailara","Huligemma","Beerappa","Chamundeshwari","Theyyam","Bhagavathi","Kodungallur Amma","Sree Muthappan","Khandoba","Jyotiba","Mhasoba","Bhavani (Tuljapur)","Dharmathakur","Manasa Devi","Shitala","Chandi","Bonga","Tejaji","Gogaji","Baba Ramdev","Meldi Mata","Khodiyar Mata","Bahuchara Mata","Vachharadada","Gugga Pir","Baba Balaknath","Sarna","Singbonga","Dharti Mata","Pen (Gond)","Thakur Dev","Kansari Devi","Donyi","Polo","Apatani","Mahavira","Rishabhanatha","Bahubali","Padmavati","Gomukha","Avalokiteshvara","Tara","Manjushri","Vajrapani","Yamantaka","Jambhala","Padmasambhava","Waheguru"];
+        function typeMessage_b(speaker,message,isCorrupted=false){return new Promise(resolve=>{const messageElement=document.createElement('div');messageElement.classList.add('chat-message');if(isCorrupted)messageElement.classList.add('corrupted');const speakerElement=document.createElement('span');speakerElement.className='speaker';speakerElement.textContent=`${speaker}:`;const textElement=document.createElement('span');textElement.className='text';messageElement.appendChild(speakerElement);messageElement.appendChild(textElement);chatWindow.appendChild(messageElement);chatWindow.scrollTop=chatWindow.scrollHeight;let i=0;const typingSpeed=30+(Math.random()*20-10);const interval=setInterval(()=>{if(i<message.length){textElement.textContent+=message.charAt(i);if(Math.random()>0.4&&message.charAt(i)!==' '){const keySound=keyPressSound.cloneNode();keySound.volume=keyPressSound.volume;keySound.play().catch(e=>{})}
+        i++;if(i%5===0)chatWindow.scrollTop=chatWindow.scrollHeight}else{clearInterval(interval);arrivalSound.currentTime=0;arrivalSound.play().catch(e=>console.error("Arrival sound failed to play:",e));chatWindow.scrollTop=chatWindow.scrollHeight;saveChat_b();resolve()}},typingSpeed)})}
+        async function startChat() { isChatting = true; await typeMessage_b("SYSTEM", "SIGNAL INTEGRITY COMPROMISED. PANTHEON-CLASS MEMETIC PAYLOAD DETECTED. ALL CHANNELS CORRUPTED. LISTENING IS... INEVITABLE."); await new Promise(resolve => setTimeout(resolve, 2500)); chatLoop(); }
+        async function chatLoop() { isChatting = true; while (isChatting) { let nextSpeakerIndex = Math.floor(Math.random() * ENTITIES_b.length); while(nextSpeakerIndex === currentSpeakerIndex) { nextSpeakerIndex = Math.floor(Math.random() * ENTITIES_b.length); } currentSpeakerIndex = nextSpeakerIndex; const currentSpeaker = ENTITIES_b[currentSpeakerIndex]; statusDiv.textContent = `${currentSpeaker} is... transmitting...`; let responseText = generateMessage_b(); let isCorrupted = Math.random() < 0.3; if (isCorrupted) { responseText = corruptMessage_b(responseText); } if (isCorrupted || Math.random() < 0.1) { triggerVisualGlitch_b(); } await typeMessage_b(currentSpeaker, responseText, isCorrupted); const delay = 3000 + Math.random() * 4000; await new Promise(resolve => setTimeout(resolve, delay)); } }
         
-        function loadChat() {
-            const savedHistory = localStorage.getItem(CHAT_HISTORY_KEY);
-            const savedSpeakerIndex = localStorage.getItem(LAST_SPEAKER_KEY);
-            if (savedHistory) {
-                chatWindow.innerHTML = savedHistory;
-                currentSpeakerIndex = parseInt(savedSpeakerIndex, 10) || 0;
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-                return true;
-            }
-            return false;
-        }
+        // --- NEW: Modified Initialization and State Transition ---
+        const hasResumed = loadChat_b();
 
-        function saveChat() {
-            localStorage.setItem(CHAT_HISTORY_KEY, chatWindow.innerHTML);
-            localStorage.setItem(LAST_SPEAKER_KEY, currentSpeakerIndex.toString());
-        }
+        const startSearchSequence = () => {
+            ambienceSound.play().catch(e => console.warn("Ambience audio failed.", e));
 
-        // --- Chat Logic ---
-        const ENTITIES = [
-            "Atingkok Maru Sidaba", "Lainingthou Sanamahi", "Apanba (Pakhangba)", "Leimarel Sidabi", "Imoinu Ahongbi", "Marjing", "Thangjing", "Koubru (Koupalu)", "Wangbren (Wangpulen)", "Kounu",
-            "Nongpok Ningthou", "Lok Ningthou", "Loyalakpa", "Salailen Sidaba", "Thongalen", "Nongshaba", "Konthoujam Tampha Lairembi", "Mongba Hanba", "Haoreima", "Ichum Lairembi", "Koujeng Leima",
-            "Nungthel Leima", "Taoroinai", "Pisatao", "Khamlangba", "Nganu Leima", "Khunu Leima", "Shapi Leima", "Panam Ningthou", "Phou Ningthou", "Pureiromba", "Phouoibi", "Lainaotabi", "Laikhurembi",
-            "Thongak Lairembi", "Hikubi Yaikubi", "Irai Leima", "Panthoibi", "Ngaleima", "Nongthang Leima", "Pithai Khongdaibi", "Silreima", "Thumleima", "Yumjao Leima", "Loktak Ima", "Pumlenpat Lairembi",
-            "Thongjarok Lairembi", "Iril Lairembi", "Imphal Turel Lairembi", "Kongba Turel Lairembi", "Pishum Keithel Lairembi", "Singjamei Keithel Lairembi", "Kongba Keithel Lairembi", "Agni", "Indra",
-            "Varuna", "Mitra", "Vayu", "Surya", "Soma", "Rudra", "Ashvins", "Usha", "Prithvi", "Dyaus Pita", "Aditi", "Maruts", "Saraswati", "Pushan", "Tvastar", "Ratri", "Yama", "Brahma", "Vishnu",
-            "Shiva (Mahadeva)", "Lakshmi", "Parvati", "Saraswati", "Durga", "Kali", "Ganesha", "Kartikeya / Murugan", "Hanuman", "Ayyappa", "Dattatreya", "Shani", "Chandra", "Kamadeva", "Kubera", "Narada",
-            "Garuda", "Nandi", "Bhairava", "Ardhanarishvara", "Matsya", "Kurma", "Varaha", "Narasimha", "Vamana", "Parashurama", "Rama", "Krishna", "Balarama", "Buddha (as Vishnu avatar)", "Kalki",
-            "Mohini", "Nara-Narayana", "Hamsa", "Karuppasamy", "Ayyanar", "Madurai Veeran", "Muneeswaran", "Mariamman", "Kateri Amman", "Muniyandi", "Pothuraju", "Poleramma", "Gangamma", "Sammakka",
-            "Saralamma", "Mailara", "Huligemma", "Beerappa", "Chamundeshwari", "Theyyam", "Bhagavathi", "Kodungallur Amma", "Sree Muthappan", "Khandoba", "Jyotiba", "Mhasoba", "Bhavani (Tuljapur)",
-            "Dharmathakur", "Manasa Devi", "Shitala", "Chandi", "Bonga", "Tejaji", "Gogaji", "Baba Ramdev", "Meldi Mata", "Khodiyar Mata", "Bahuchara Mata", "Vachharadada", "Gugga Pir", "Baba Balaknath",
-            "Sarna", "Singbonga", "Dharti Mata", "Pen (Gond)", "Thakur Dev", "Kansari Devi", "Donyi", "Polo", "Apatani", "Mahavira", "Rishabhanatha", "Bahubali", "Padmavati", "Gomukha", "Avalokiteshvara",
-            "Tara", "Manjushri", "Vajrapani", "Yamantaka", "Jambhala", "Padmasambhava", "Waheguru"
-        ];
-        
-        function typeMessage(speaker, message, isCorrupted = false) {
-            return new Promise(resolve => {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('chat-message');
-                if (isCorrupted) messageElement.classList.add('corrupted');
+            // Schedule the dot to appear
+            setTimeout(() => {
+                const radarSize = 300;
+                const angle = Math.random() * 2 * Math.PI;
+                const radius = (radarSize / 2) * (0.2 + Math.random() * 0.65); 
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
                 
-                const speakerElement = document.createElement('span');
-                speakerElement.className = 'speaker';
-                speakerElement.textContent = `${speaker}:`;
+                radarDot.style.left = `calc(50% + ${x}px)`;
+                radarDot.style.top = `calc(50% + ${y}px)`;
+                radarDot.style.display = 'block';
+
+                searchStatus.textContent = 'SIGNAL DETECTED!';
                 
-                const textElement = document.createElement('span');
-                textElement.className = 'text';
+                glitchSound.currentTime = 0;
+                glitchSound.play().catch(e => console.error("Sound failed to play:", e));
 
-                messageElement.appendChild(speakerElement);
-                messageElement.appendChild(textElement);
-                chatWindow.appendChild(messageElement);
-                chatWindow.scrollTop = chatWindow.scrollHeight;
+                // Schedule the popup to appear after 3 seconds
+                setTimeout(() => {
+                    searchStatus.textContent = 'SIGNAL LOCKED. AWAITING COMMAND.';
+                    radarSweep.style.animation = 'none'; 
+                    radarSweep.style.opacity = '0.5';
 
-                let i = 0;
-                const typingSpeed = 30 + (Math.random() * 20 - 10);
-                const interval = setInterval(() => {
-                    if (i < message.length) {
-                        textElement.textContent += message.charAt(i);
-                        
-                        // NEW: Play key press sound randomly for a more natural feel
-                        if (Math.random() > 0.4 && message.charAt(i) !== ' ') { // Play on ~60% of non-space characters
-                            // Clone the node to allow rapid, overlapping sounds without cutting each other off
-                            const keySound = keyPressSound.cloneNode();
-                            keySound.volume = keyPressSound.volume;
-                            keySound.play().catch(e => { /* Ignore errors from rapid plays */ });
-                        }
+                    signalPopup.style.display = 'block';
+                    setTimeout(() => signalPopup.style.opacity = '1', 10);
+                    
+                }, 3000);
 
-                        i++;
-                        if (i % 5 === 0) chatWindow.scrollTop = chatWindow.scrollHeight;
-                    } else {
-                        clearInterval(interval);
-                        arrivalSound.currentTime = 0;
-                        arrivalSound.play().catch(e => console.error("Arrival sound failed to play:", e));
-                        chatWindow.scrollTop = chatWindow.scrollHeight;
-                        saveChat();
-                        resolve();
-                    }
-                }, typingSpeed);
-            });
-        }
+            }, 2500);
+        };
 
-        async function startChat() {
-            isChatting = true;
-            await typeMessage("SYSTEM", "SIGNAL INTEGRITY COMPROMISED. PANTHEON-CLASS MEMETIC PAYLOAD DETECTED. ALL CHANNELS CORRUPTED. LISTENING IS... INEVITABLE.");
-            await new Promise(resolve => setTimeout(resolve, 2500));
-            chatLoop();
-        }
+        const captureAndStartChat = () => {
+            searchOverlay.style.opacity = '0';
+            searchOverlay.addEventListener('transitionend', () => {
+                searchOverlay.style.display = 'none';
+            }, { once: true });
 
-        async function chatLoop() {
-            isChatting = true;
-            while (isChatting) {
-                let nextSpeakerIndex = Math.floor(Math.random() * ENTITIES.length);
-                while(nextSpeakerIndex === currentSpeakerIndex) {
-                    nextSpeakerIndex = Math.floor(Math.random() * ENTITIES.length);
-                }
-                currentSpeakerIndex = nextSpeakerIndex;
-                const currentSpeaker = ENTITIES[currentSpeakerIndex];
-
-                statusDiv.textContent = `${currentSpeaker} is... transmitting...`;
-                
-                let responseText = generateMessage();
-                let isCorrupted = Math.random() < 0.3;
-
-                if (isCorrupted) {
-                    responseText = corruptMessage(responseText);
-                }
-                
-                // NEW: Guaranteed glitch on corrupted messages for better sync, plus a smaller random chance
-                if (isCorrupted || Math.random() < 0.1) { 
-                    triggerVisualGlitch();
-                }
-
-                await typeMessage(currentSpeaker, responseText, isCorrupted);
-                                
-                const delay = 3000 + Math.random() * 4000;
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
-
-        // --- Initialization on User Interaction ---
-        const hasResumed = loadChat();
-        statusDiv.textContent = "[ CLICK TO INITIATE CONNECTION ]";
-
-        const startExperience = () => {
-            ambienceSound.play().catch(e => {
-                console.warn("Ambience audio failed to play, even after interaction.", e);
-            });
+            container.style.display = 'flex';
+            setTimeout(() => {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+            }, 50);
 
             if (hasResumed) {
                 chatLoop();
@@ -463,8 +539,9 @@
                 startChat();
             }
         };
-
-        document.body.addEventListener('click', startExperience, { once: true });
+        
+        document.body.addEventListener('click', startSearchSequence, { once: true });
+        captureButton.addEventListener('click', captureAndStartChat);
     });
     </script>
 </body>
