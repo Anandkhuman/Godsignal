@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>AI Drowsiness Detection</title>
     
     <!-- All CSS is in this style tag -->
@@ -23,15 +23,20 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background-color: var(--primary-color);
             color: var(--text-color);
-            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
         }
 
         #three-bg {
@@ -43,12 +48,10 @@
             z-index: -1;
         }
 
-        .container {
+        .app-wrapper {
             position: relative;
             z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            width: clamp(300px, 90vw, 540px);
             padding: 2rem;
             background-color: rgba(27, 38, 59, 0.85);
             backdrop-filter: blur(10px);
@@ -56,16 +59,33 @@
             border: 1px solid var(--accent-color);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             text-align: center;
-            max-width: 90vw;
-            width: 540px;
+        }
+        
+        #permission-overlay {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        #main-container {
+            display: none; /* Hidden by default, shown after permission */
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 {
-            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            font-size: clamp(1.5rem, 6vw, 2.5rem);
             color: var(--text-color);
             margin-bottom: 0.5rem;
             letter-spacing: 2px;
             text-shadow: 0 0 10px var(--highlight-color);
+        }
+        
+        p.description {
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            color: var(--highlight-color);
+            margin-bottom: 1rem;
         }
 
         .video-container {
@@ -101,26 +121,27 @@
             width: 100%;
         }
 
-        #startButton {
-            padding: 12px 25px;
+        .button {
+            padding: 14px 28px;
             font-size: 1.1rem;
             font-weight: bold;
             color: var(--text-color);
             background-color: var(--highlight-color);
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             width: 100%;
+            -webkit-appearance: none;
         }
 
-        #startButton:hover:not(:disabled) {
+        .button:hover:not(:disabled) {
             background-color: var(--accent-color);
             transform: translateY(-2px);
         }
 
-        #startButton:disabled {
+        .button:disabled {
             background-color: var(--secondary-color);
             cursor: not-allowed;
             transform: none;
@@ -185,26 +206,35 @@
     <div id="three-bg"></div>
 
     <!-- Main Application Container -->
-    <div class="container">
-        <h1>AI Drowsiness Detection</h1>
+    <div class="app-wrapper">
         
-        <div class="video-container">
-            <video id="video" autoplay playsinline muted></video>
-            <canvas id="overlayCanvas"></canvas>
+        <!-- Step 1: Permission Screen -->
+        <div id="permission-overlay">
+            <h1>Stay Alert</h1>
+            <p class="description">This app uses your camera to detect drowsiness in real-time. Your privacy is protected as no video data leaves your device.</p>
+            <button id="permissionButton" class="button">Grant Camera Access</button>
         </div>
 
-        <div class="controls">
-            <div class="status-container">
-                <div class="status-box">
-                    <p id="status" class="awake">AWAKE</p>
-                    <span class="label">Status</span>
-                </div>
-                 <div class="status-box">
-                    <p id="earValue">0.00</p>
-                    <span class="label">Eye Ratio</span>
-                </div>
+        <!-- Step 2: Main App (Initially Hidden) -->
+        <div id="main-container">
+            <h1>AI Drowsiness Detection</h1>
+            <div class="video-container">
+                <video id="video" autoplay playsinline muted></video>
+                <canvas id="overlayCanvas"></canvas>
             </div>
-            <button id="startButton" disabled>Loading Model...</button>
+            <div class="controls">
+                <div class="status-container">
+                    <div class="status-box">
+                        <p id="status" class="awake">AWAKE</p>
+                        <span class="label">Status</span>
+                    </div>
+                     <div class="status-box">
+                        <p id="earValue">0.00</p>
+                        <span class="label">Eye Ratio</span>
+                    </div>
+                </div>
+                <button id="startButton" class="button">Start Detection</button>
+            </div>
         </div>
     </div>
 
@@ -216,10 +246,7 @@
     <!-- Audio alarm linked from an online source (Pixabay) -->
     <audio id="alertSound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_c683f082e7.mp3" preload="auto"></audio>
 
-    <!--
-      This script tag uses type="module" to allow for ES6 imports.
-      All libraries are loaded from trusted CDNs.
-    -->
+    <!-- All JavaScript is in this script tag -->
     <script type="module">
         // Import necessary libraries from CDNs
         import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
@@ -229,6 +256,9 @@
         import * as faceLandmarksDetection from 'https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection';
 
         // --- DOM Elements ---
+        const permissionOverlay = document.getElementById('permission-overlay');
+        const permissionButton = document.getElementById('permissionButton');
+        const mainContainer = document.getElementById('main-container');
         const video = document.getElementById('video');
         const startButton = document.getElementById('startButton');
         const statusEl = document.getElementById('status');
@@ -239,8 +269,8 @@
         const ctx = overlayCanvas.getContext('2d');
 
         // --- Detection Constants ---
-        const EAR_THRESHOLD = 0.21; // Threshold for eye closure
-        const CONSECUTIVE_FRAMES = 20; // Number of consecutive frames with closed eyes to trigger an alert
+        const EAR_THRESHOLD = 0.21;
+        const CONSECUTIVE_FRAMES = 20;
 
         // --- State Variables ---
         let detector;
@@ -248,25 +278,22 @@
         let closedEyeFrames = 0;
         let isAlerting = false;
         let isRunning = false;
+        let modelReady = false;
 
         // --- Three.js Background Setup ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.getElementById('three-bg').appendChild(renderer.domElement);
 
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 5000;
-        const posArray = new Float32Array(particlesCount * 3);
-        for (let i = 0; i < particlesCount * 3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 5;
-        }
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const particlesMaterial = new THREE.PointsMaterial({ size: 0.005, color: 0x778da9 });
-        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-        scene.add(particlesMesh);
-        camera.position.z = 2;
+        // NEW: Icosahedron Geometry
+        const geometry = new THREE.IcosahedronGeometry(1.5, 0); // Radius 1.5, detail 0
+        const material = new THREE.MeshBasicMaterial({ color: 0x778da9, wireframe: true });
+        const icosahedron = new THREE.Mesh(geometry, material);
+        scene.add(icosahedron);
+        
+        camera.position.z = 3;
 
         window.addEventListener('resize', () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -276,8 +303,8 @@
 
         function animate3D() {
             requestAnimationFrame(animate3D);
-            particlesMesh.rotation.y += 0.0005;
-            particlesMesh.rotation.x += 0.0005;
+            icosahedron.rotation.y += 0.001;
+            icosahedron.rotation.x += 0.001;
             renderer.render(scene, camera);
         }
         animate3D();
@@ -285,46 +312,65 @@
         // --- Main Application Logic ---
 
         /**
-         * Initializes the ML model and webcam
+         * Initializes the ML model.
          */
-        async function main() {
+        async function initializeModel() {
             try {
-                // Load the MediaPipe Face Landmark detection model.
                 const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
                 const detectorConfig = {
                     runtime: 'mediapipe',
                     solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
                 };
                 detector = await faceLandmarksDetection.createDetector(model, detectorConfig);
-
-                startButton.innerText = 'Start Detection';
-                startButton.disabled = false;
+                modelReady = true;
+                permissionButton.disabled = false;
+                permissionButton.innerText = 'Grant Camera Access';
+                console.log("Model loaded successfully.");
             } catch (error) {
-                console.error("Initialization failed:", error);
-                startButton.innerText = 'Error - Refresh';
-                alert("Could not initialize the model or camera. Please refresh the page and grant permissions.");
+                console.error("Model initialization failed:", error);
+                permissionButton.innerText = 'Error - Refresh';
+                alert("Could not load the AI model. Please check your connection and refresh the page.");
             }
         }
 
         /**
-         * Calculates the Eye Aspect Ratio (EAR)
-         * @param {Array} eye - Array of eye landmark points
+         * Requests camera permission from the user.
          */
-        function calculateEAR(eye) {
+        async function requestCameraPermission() {
+            try {
+                permissionButton.disabled = true;
+                permissionButton.innerText = 'Awaiting Permission...';
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // We got permission. Stop the track immediately. We'll start it again later.
+                stream.getTracks().forEach(track => track.stop());
+                
+                // Animate the UI transition
+                gsap.to(permissionOverlay, {
+                    opacity: 0,
+                    duration: 0.5,
+                    onComplete: () => {
+                        permissionOverlay.style.display = 'none';
+                        mainContainer.style.display = 'flex';
+                        gsap.from(mainContainer, { opacity: 0, duration: 0.5 });
+                    }
+                });
+
+            } catch (err) {
+                console.error("Camera access denied:", err);
+                permissionButton.disabled = false;
+                permissionButton.innerText = 'Grant Camera Access';
+                alert("Camera permission is required. Please enable it in your browser settings and try again.");
+            }
+        }
+
+        const calculateEAR = (eye) => {
             const A = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
             const B = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
             const C = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
             return (A + B) / (2.0 * C);
-        }
+        };
 
-        /**
-         * Euclidean distance
-         */
-        const distance = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
-
-        /**
-         * Main detection loop
-         */
         async function detectDrowsiness() {
             if (!detector || !isRunning) return;
 
@@ -333,8 +379,6 @@
 
             if (faces.length > 0) {
                 const keypoints = faces[0].keypoints;
-                
-                // Landmark indices for eyes
                 const leftEyeIndices = [33, 160, 158, 133, 153, 144];
                 const rightEyeIndices = [362, 385, 387, 263, 373, 380];
                 
@@ -348,8 +392,12 @@
                 earValueEl.innerText = avgEAR.toFixed(2);
                 
                 // Draw eye landmarks for visualization
-                drawEyeLandmarks(leftEye);
-                drawEyeLandmarks(rightEye);
+                ctx.fillStyle = "rgba(119, 141, 169, 0.7)";
+                [...leftEye, ...rightEye].forEach(point => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
 
                 if (avgEAR < EAR_THRESHOLD) {
                     closedEyeFrames++;
@@ -358,6 +406,7 @@
                     if (isAlerting) {
                         isAlerting = false;
                         gsap.to(alertOverlay, { display: 'none', opacity: 0, duration: 0.5 });
+                        gsap.killTweensOf('#alert-message');
                         alertSound.pause();
                         alertSound.currentTime = 0;
                     }
@@ -371,7 +420,6 @@
                     statusEl.className = 'drowsy';
                     triggerAlert();
                 }
-
             } else {
                 statusEl.innerText = 'NO FACE';
                 statusEl.className = 'drowsy';
@@ -379,41 +427,17 @@
             }
         }
         
-        function drawEyeLandmarks(eye) {
-            ctx.fillStyle = "rgba(119, 141, 169, 0.7)"; // --highlight-color
-            eye.forEach(point => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
-                ctx.fill();
-            });
-        }
-        
-        /**
-         * Triggers the visual and audio alert
-         */
         function triggerAlert() {
             if (!isAlerting) return;
             alertSound.play();
             gsap.set(alertOverlay, { display: 'flex' });
-            gsap.to(alertOverlay, { 
-                opacity: 1, 
-                duration: 0.5,
-                onComplete: () => {
-                    gsap.to('#alert-message', {
-                        scale: 1,
-                        duration: 0.3,
-                        ease: 'back.out(1.7)',
-                        yoyo: true,
-                        repeat: -1,
-                        repeatDelay: 0.5
-                    });
-                }
-            });
+            gsap.to(alertOverlay, { opacity: 1, duration: 0.5 });
+            gsap.fromTo('#alert-message', 
+                { scale: 0.5 }, 
+                { scale: 1, duration: 0.3, ease: 'back.out(1.7)', yoyo: true, repeat: -1, repeatDelay: 0.5 }
+            );
         }
         
-        /**
-         * Starts or stops the detection process
-         */
         async function toggleDetection() {
             if (isRunning) {
                 // Stop detection
@@ -422,16 +446,20 @@
                 video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
                 startButton.innerText = 'Start Detection';
-                gsap.to('.container', { scale: 1, duration: 0.3 });
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                statusEl.innerText = 'INACTIVE';
+                statusEl.className = '';
             } else {
                 // Start detection
                 try {
+                    startButton.disabled = true;
+                    startButton.innerText = 'Starting Camera...';
+
                     const stream = await navigator.mediaDevices.getUserMedia({
                         video: { width: 640, height: 480 },
                     });
                     video.srcObject = stream;
-                    await new Promise((resolve) => {
+                    await new Promise(resolve => {
                         video.onloadedmetadata = () => {
                             overlayCanvas.width = video.videoWidth;
                             overlayCanvas.height = video.videoHeight;
@@ -440,22 +468,27 @@
                     });
                     
                     isRunning = true;
-                    detectionInterval = setInterval(detectDrowsiness, 1000 / 30); // 30 FPS
+                    detectionInterval = setInterval(detectDrowsiness, 1000 / 30); // ~30 FPS
                     startButton.innerText = 'Stop Detection';
-                    gsap.to('.container', { scale: 1.02, duration: 0.3 });
+                    startButton.disabled = false;
                     
                 } catch(err) {
-                    console.error("Camera access denied:", err);
-                    alert("Camera access is required. Please allow camera access and try again.");
+                    console.error("Error starting camera:", err);
+                    alert("Could not start the camera. Please ensure it's not being used by another application.");
+                    startButton.disabled = false;
+                    startButton.innerText = 'Start Detection';
                 }
             }
         }
 
-        // --- Event Listeners ---
+        // --- Event Listeners & Initialization ---
+        permissionButton.addEventListener('click', requestCameraPermission);
         startButton.addEventListener('click', toggleDetection);
         
-        // --- Initialization ---
-        main();
+        // Disable button until model is loaded
+        permissionButton.disabled = true;
+        permissionButton.innerText = 'Loading AI Model...';
+        initializeModel();
 
     </script>
 </body>
