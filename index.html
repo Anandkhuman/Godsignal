@@ -388,7 +388,7 @@
             <!-- NEW: Radar Dot -->
             <div id="radar-dot"></div>
         </div>
-        <div id="search-status">SEARCHING FOR TRANSMISSION...</div>
+        <div id="search-status">CLICK ANYWHERE TO BEGIN SCAN</div>
         
         <!-- NEW: Signal Found Popup -->
         <div id="signal-popup">
@@ -416,7 +416,8 @@
 
     <!-- SOUND EFFECTS -->
     <audio id="ambience-sound" loop src="https://github.com/Anandkhuman/song/raw/main/1.mp3" preload="auto"></audio>
-    <audio id="key-press-sound" src="https://pixabay.com/sound-effects/typewriter-key-1-110031/download/mp3/" preload="auto"></audio>
+    <!-- FIXED: Changed src to a direct, valid mp3 file link -->
+    <audio id="key-press-sound" src="https://github.com/Anandkhuman/song/raw/main/2.mp3" preload="auto"></audio>
     <audio id="glitch-sound" src="https://github.com/Anandkhuman/song/raw/main/3.mp3" preload="auto"></audio>
     <audio id="arrival-sound" src="https://github.com/Anandkhuman/song/raw/main/4.mp3" preload="auto"></audio>
 
@@ -484,13 +485,13 @@
         async function startChat() { isChatting = true; await typeMessage_b("SYSTEM", "SIGNAL INTEGRITY COMPROMISED. PANTHEON-CLASS MEMETIC PAYLOAD DETECTED. ALL CHANNELS CORRUPTED. LISTENING IS... INEVITABLE."); await new Promise(resolve => setTimeout(resolve, 2500)); chatLoop(); }
         async function chatLoop() { isChatting = true; while (isChatting) { let nextSpeakerIndex = Math.floor(Math.random() * ENTITIES_b.length); while(nextSpeakerIndex === currentSpeakerIndex) { nextSpeakerIndex = Math.floor(Math.random() * ENTITIES_b.length); } currentSpeakerIndex = nextSpeakerIndex; const currentSpeaker = ENTITIES_b[currentSpeakerIndex]; statusDiv.textContent = `${currentSpeaker} is... transmitting...`; let responseText = generateMessage_b(); let isCorrupted = Math.random() < 0.3; if (isCorrupted) { responseText = corruptMessage_b(responseText); } if (isCorrupted || Math.random() < 0.1) { triggerVisualGlitch_b(); } await typeMessage_b(currentSpeaker, responseText, isCorrupted); const delay = 3000 + Math.random() * 4000; await new Promise(resolve => setTimeout(resolve, delay)); } }
         
-        // --- NEW: Modified Initialization and State Transition ---
+        // --- FIXED: Modified Initialization and State Transition ---
         const hasResumed = loadChat_b();
 
         const startSearchSequence = () => {
-            ambienceSound.play().catch(e => console.warn("Ambience audio failed.", e));
+            searchStatus.textContent = 'SEARCHING FOR TRANSMISSION...';
 
-            // Schedule the dot to appear
+            // Schedule the dot to appear after 3 seconds
             setTimeout(() => {
                 const radarSize = 300;
                 const angle = Math.random() * 2 * Math.PI;
@@ -505,9 +506,10 @@
                 searchStatus.textContent = 'SIGNAL DETECTED!';
                 
                 glitchSound.currentTime = 0;
+                // This play() call is now safe because it happens after user interaction
                 glitchSound.play().catch(e => console.error("Sound failed to play:", e));
 
-                // Schedule the popup to appear after 3 seconds
+                // Schedule the popup to appear 3 seconds after detection
                 setTimeout(() => {
                     searchStatus.textContent = 'SIGNAL LOCKED. AWAITING COMMAND.';
                     radarSweep.style.animation = 'none'; 
@@ -518,7 +520,7 @@
                     
                 }, 3000);
 
-            }, 2500);
+            }, 3000);
         };
 
         const captureAndStartChat = () => {
@@ -540,7 +542,19 @@
             }
         };
         
-        document.body.addEventListener('click', startSearchSequence, { once: true });
+        // FIXED: Wait for the user to click anywhere on the initial screen to start the experience.
+        // This ensures the browser allows audio to be played.
+        searchOverlay.addEventListener('click', function initExperience() {
+            // Now that we have user interaction, start the ambience sound.
+            ambienceSound.play().catch(e => {
+                console.warn("Ambience audio failed to play even after interaction.", e);
+            });
+
+            // And start the visual sequence.
+            startSearchSequence();
+
+        }, { once: true }); // The {once: true} option automatically removes the listener after it runs.
+        
         captureButton.addEventListener('click', captureAndStartChat);
     });
     </script>
